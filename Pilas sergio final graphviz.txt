@@ -1,0 +1,51 @@
+#include "Stack.h"
+#include <iostream>
+using namespace std;
+int main() {
+    Stack<int> pila;
+    
+        int choice;
+    do {
+        cout << "\n\n--------Menu-----------\n";
+        cout << "1.Insertar\n";
+        cout << "2.Eliminar\n";
+        cout << "3.Buscar\n";
+        cout << "-----------------------";
+        cout << "\nHola, ingresa tu opcion(1,2,3):\t";
+        cin >> choice;
+        switch (choice)
+        {
+        case 1:
+            int a;
+            cout << "\nIngresa el numero a insertar:\t";
+            cin >> a;
+            pila.push(a);
+            
+            break;
+
+        case 2:
+            //int b;
+            //cout << "\nIngresa el numero a eliminar:\t";
+            //cin >> b;
+            if (pila.getSize() != 0) {
+                pila.pop();
+
+            }
+
+            break;
+
+        case 3:
+            break;
+
+        default:cout << "\nInvalid choice:\n";
+        }
+        pila.toDot("Stack.dot");
+        system("dot Stack.dot -Tsvg -o Stack.svg");
+
+    } while (choice != 3);
+
+    
+
+    return 0;
+}
+

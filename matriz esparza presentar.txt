@@ -1,0 +1,332 @@
+#include <iostream>
+#include <string.h>
+#include "graphics.h"
+#include <math.h>
+#include <stdlib.h> 
+#include <ctype.h>
+#include <list>
+using namespace std;
+
+struct CSNode
+{
+	CSNode(int _x, int _y, int _v);
+	int x, y;
+	int value;
+	//permite << m(x,y) , es decir, mostrar el valor de los nodos de acuerdo a sus coordenadas
+	friend ostream& operator << (ostream& output, CSNode node) {
+		output << node.value;
+		return output;
+	}
+	// permite asignar el valor al Nodo (linea 85)
+	void operator = (int val) {
+		value = val;
+	}
+		
+};
+
+CSNode::CSNode(int _x, int _y, int _v)
+{
+	x = _x; y = _y; value = _v;
+}
+
+
+
+class CSparseMatrix
+{
+public:
+	CSparseMatrix(int xdim = 0, int ydim = 0);
+	~CSparseMatrix();
+	bool Set(int x, int y, int value);
+	int Get(int x, int y);
+	void Print();
+	void clean_ceros();
+	bool _clean_ceros();
+	CSNode& operator()(int x, int y);
+	//dimensiones de la matriz esparza
+	int XDim, YDim;
+	list<CSNode> smatrix;
+};
+
+CSparseMatrix::CSparseMatrix(int _xdim, int _ydim)
+{
+	XDim = _xdim; YDim = _ydim;
+}
+
+CSparseMatrix::~CSparseMatrix()
+{
+}
+
+void CSparseMatrix::clean_ceros() {
+	bool band;
+	do {
+		band = _clean_ceros();
+	} while (band);
+}
+
+bool CSparseMatrix::_clean_ceros() {
+	list<CSNode>::iterator it;
+	for (it = smatrix.begin(); it != smatrix.end(); it++) {
+		if (it->value == 0) {
+			smatrix.erase(it);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool CSparseMatrix::Set(int x, int y, int value)
+{
+	if (Get(x, y)) {
+		list<CSNode>::iterator it;
+		for (it = smatrix.begin(); it != smatrix.end(); it++) {
+			if ((*it).x == x && (*it).y == y) {
+				if (value != 0) (*it) = value;
+				else smatrix.erase(it);
+				return 0;
+			}
+		}
+	}
+	else {
+		if (value == 0) return 0;
+		CSNode aux(x, y, value);
+		smatrix.push_back(aux);
+	}
+	return 0;
+}
+
+int CSparseMatrix::Get(int x, int y)
+{
+	list<CSNode>::iterator it;
+	for (it = smatrix.begin(); it != smatrix.end(); it++) {
+		if ((*it).x == x && (*it).y == y)
+			if (it->value != 0)
+				return (*it).value;
+			else {
+				smatrix.erase(it);
+				return 0;
+			}
+	}
+	return 0;
+}
+
+
+CSNode& CSparseMatrix::operator()(int x, int y)
+{
+	list<CSNode>::iterator it;
+	for (it = smatrix.begin(); it != smatrix.end(); it++) {
+		if ((*it).x == x && (*it).y == y) return *it;
+	}
+
+	CSNode aux(x, y, 0);
+	smatrix.push_back(aux);
+	return smatrix.back();
+	/*
+	for (it = smatrix.begin(); it != smatrix.end(); it++) {
+		if ((*it).x == x && (*it).y == y) return *it;
+	}
+	*/
+}
+
+void CSparseMatrix::Print()
+{
+	cout << "\n--------------------\n";
+	for (int f = 0; f < XDim; f++) {
+		for (int c = 0; c < YDim; c++) {
+			cout << Get(f, c) << "  ";
+		} cout << endl;
+	}
+	cout << endl;
+}
+
+
+void imprime(int size_x, int size_y, list<CSNode> smatrix,
+	int origin_x = 100, int origin_y = 80, int radius = 30) {
+	list<CSNode>::iterator it;
+	int x, y;
+	int dis_x = 2 * radius;
+	int dis_y = 2 * radius;
+	for (it = smatrix.begin(); it != smatrix.end(); it++) {
+		char buffer[5];
+		x = origin_x + it->x * dis_x;
+		y = origin_y + it->y * dis_y;
+		strcpy(buffer, to_string(it->value).c_str());
+		circle(x, y, radius);
+		settextstyle(ARW_STARTRIGHT, 0, 3);
+		if (it->value < 0) outtextxy(x - 27, y - 15, buffer);
+		else outtextxy(x - 15, y - 15, buffer);
+	}
+
+	origin_x -= radius;
+	origin_y -= radius;
+	int width = origin_x + dis_x * (size_x);
+	int hight = origin_y + dis_y * (size_y);
+	for (int i = 0; i < size_y + 1; i++) {
+		line(origin_x, origin_y + i * dis_y, width, origin_y + i * dis_y);
+		line(origin_x + i * dis_x, origin_y, origin_x + i * dis_x, hight);
+	}
+
+	x = origin_x + radius + 15;
+	y = origin_y - radius + 15;
+	int a = origin_x - radius + 15, b = y;
+	y = origin_y + radius;
+	for (int i = 0; i < size_y; i++) {
+		char buffer[5];
+		strcpy(buffer, to_string(i).c_str());
+		settextstyle(ARW_STARTRIGHT, 0, 3);
+		outtextxy(x - 27, b - 15, buffer);
+		outtextxy(a - 27, y - 15, buffer);
+		x += dis_x;
+		y += dis_y;
+	}
+}
+
+int main() {
+	int size_x = 10, size_y = 10;
+	CSparseMatrix m(size_x, size_y);
+	//insertar 0s
+	m.Set(0, 0, 0);
+	m.Set(0, 1, 0);
+	m.Set(0, 2, 0);
+	m.Set(0, 3, 0);
+	m.Set(0, 4, 0);
+	//insertar otros numeros
+	m.Set(2, 1, 5);
+	m.Set(3, 2, 9);
+	m.Set(1, 2, 1);
+	m.Set(4, 2, 4);
+	m.Set(4, 3, 8);
+	m.Set(0, 4, 6);
+	
+
+	/*****************menu*****************************/
+		int choice;
+		//inicializacion grafica
+		initwindow(1300, 800, "Sparce Matrix");
+		imprime(size_x, size_y, m.smatrix);
+
+		do {
+			cout << "\n\n--------Menu-----------\n";
+			cout << "1.Insertar\n";
+			cout << "2.Eliminar\n";
+			cout << "3.Salir\n-----------------------";
+			cout << "\nHola, ingresa tu opcion(1,2,3,4):\t";
+			cin >> choice;
+			switch (choice)
+			{
+			case 1: {
+				int a;
+				cout << "\nIngresa la coordenada x a insertar:\t";
+				cin >> a;
+
+				int b;
+				cout << "\nIngresa la coordenada y a insertar:\t";
+				cin >> b;
+
+				int x;
+				cout << "\nIngresa el valor x a insertar:\t";
+				cin >> x;
+
+				m.Set(a, b, x);
+				//print grafico
+				cleardevice();
+				imprime(size_x, size_y, m.smatrix);
+
+
+				break;
+			}
+			case 2:
+				int d;
+				cout << "\nIngresa la coordenada x a eliminar:\t";
+				cin >> d;
+
+				int e;
+				cout << "\nIngresa la coordenada y a eliminar:\t";
+				cin >> e;
+
+
+				m.Set(d, e, 0);
+				//clear grafico anterior
+				cleardevice();
+				//print grafico
+				imprime(size_x, size_y, m.smatrix);
+
+				break;
+
+			case 3: {
+				//mostrar grafico
+				//initwindow(1200, 800, "BinaryTree"); //abre la ventana del arbol
+				//mostrar en consola:
+				
+				/*print de arbol
+				bt.printTree();
+				*/
+
+				break;
+			}
+			default:cout<< "\nInvalido\n";
+			}
+			
+		} while (choice != 3);
+/***************************** fin de menu ***************************/
+
+
+	closegraph();
+	return 0;
+}
+/*output:
+--------------------
+3  0  0  0  6  0  0  0  0  0
+0  0  1  0  0  0  0  0  0  0
+0  5  0  0  0  0  0  0  0  0
+0  0  9  0  0  0  0  0  0  0
+0  0  4  8  0  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+
+
+--------------------
+3  0  0  0  0  0  0  0  0  0
+0  0  7  0  0  0  0  0  0  0
+0  5  0  0  0  0  0  0  0  0
+0  0  9  0  0  0  0  0  0  0
+0  0  4  0  0  0  0  0  0  0
+0  0  0  0  3  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+
+
+--------------------
+0  0  0  0  3  0  0  0  0  0
+0  0  7  0  0  0  0  0  0  0
+0  5  0  0  0  0  0  0  0  -2
+0  0  9  0  0  0  0  0  0  0
+1  0  4  0  2  0  0  0  0  0
+0  0  0  0  3  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  5  0  0
+0  0  0  0  0  0  0  0  0  0
+
+
+ 0,0 => 0
+ 4,1 => 0
+ 1,2 => 7
+--------------------
+0  0  0  0  3  0  0  0  0  0
+0  0  7  0  0  0  0  0  0  0
+0  5  0  0  0  0  0  0  0  -2
+0  0  9  0  0  0  0  0  0  0
+1  0  4  0  2  0  0  0  0  0
+0  0  0  0  3  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  0  0  0
+0  0  0  0  0  0  0  5  0  0
+0  0  0  0  0  0  0  0  0  0
+
+Presione una tecla para continuar . . .
+*/

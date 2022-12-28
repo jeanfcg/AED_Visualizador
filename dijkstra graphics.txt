@@ -1,0 +1,459 @@
+#include "graphics.h"
+#include <iostream>
+#include <math.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string>
+#include <queue>
+#include <map>
+using namespace std;
+
+void nodoGraph(int posX, int posY, string numero) {
+	char c[10];
+	strcpy(c, numero.c_str());
+	//circle(posX, posY, 20);
+	settextstyle(3, 0, 2);
+	outtextxy(posX - 5, posY - 10, c);
+}
+
+
+class Arista;
+class Vertice
+{
+	string nombre;
+	int coorX, coorY;
+	Vertice* sig;
+	Arista* ari;
+	friend class Grafo;
+public:
+	Vertice(string _nombre, int _coorX, int _coorY) {
+		nombre = _nombre;
+		coorX = _coorX;
+		coorY = _coorY;
+		sig = NULL;
+		ari = NULL;
+	};
+};
+
+
+class Vertice;
+class Arista
+{
+	int precio;
+	Arista* sig;
+	Vertice* dest;
+	friend class Grafo;
+public:
+	Arista(Vertice* _dest, int _precio) {
+		dest = _dest;
+		precio = _precio;
+		sig = NULL;
+	};
+};
+
+//Grafo
+class Grafo
+{
+public:
+	Grafo();
+	Vertice* Find(string nombre);
+	void InsertaVertice(string nombre, int coorX, int coorY);
+	void InsertaArista(string ori, string dest, int precio);
+	void Dijkstra(string inicio, string final);
+	Vertice* primero;
+	int tamano;
+};
+
+Grafo::Grafo()
+{
+	primero = NULL;
+	tamano = 0;
+}
+
+Vertice* Grafo::Find(string nombre)
+{
+	Vertice* i = primero;
+
+	while (i != NULL)
+	{
+		if (i->nombre == nombre)
+			return i;
+
+		i = i->sig;
+	}
+
+	return NULL;
+}
+
+void Grafo::InsertaVertice(string nombre, int coorX, int coorY)
+{
+	if (Find(nombre) == NULL)
+	{
+		Vertice* nuevo = new Vertice(nombre, coorX, coorY);
+		nodoGraph(coorX, coorY, nombre);
+
+		if (tamano == 0)
+			primero = nuevo;
+		else
+		{
+			Vertice* i = primero;
+
+			while (i->sig != NULL)
+				i = i->sig;
+
+			i->sig = nuevo;
+		}
+
+		tamano++;
+	}
+}
+
+void GrafFlecha(int priCoorX, int priCoorY, int segCoorX, int segCoorY, int distancia) {
+	settextstyle(3, 0, 2);
+	string cadD = to_string(distancia);
+	char* c = const_cast<char*>(cadD.c_str());
+
+	if (segCoorX > priCoorX && segCoorY == priCoorY) {
+		line(priCoorX + 20, priCoorY, segCoorX - 20, segCoorY);
+		line(segCoorX - 20, segCoorY, segCoorX - 30, segCoorY - 10);//Flecha
+		line(segCoorX - 20, segCoorY, segCoorX - 30, segCoorY + 10);//Flecha
+		outtextxy(priCoorX + ((segCoorX - priCoorX) / 2), priCoorY, c);
+	}
+	else if (segCoorX == priCoorX && segCoorY > priCoorY) {
+		line(priCoorX, priCoorY + 20, segCoorX, segCoorY - 20);
+		line(segCoorX, segCoorY - 20, segCoorX - 10, segCoorY - 40);//Flecha
+		line(segCoorX, segCoorY - 20, segCoorX + 10, segCoorY - 40);//Flecha
+		outtextxy(priCoorX, priCoorY + ((segCoorX - priCoorX) / 2), c);
+	}
+	else if (segCoorY > priCoorY) {
+		line(priCoorX, priCoorY + 20, segCoorX, segCoorY - 20);
+		if (segCoorX > priCoorX) {
+			line(segCoorX, segCoorY - 20, segCoorX - 20, segCoorY - 25);//Flecha
+			line(segCoorX, segCoorY - 20, segCoorX, segCoorY - 40);//Flecha
+			outtextxy(priCoorX + ((segCoorX - priCoorX) / 2), priCoorY + ((segCoorY - priCoorY) / 2), c);
+		}
+		else {
+			line(segCoorX, segCoorY - 20, segCoorX - 20, segCoorY - 10);//Flecha
+			line(segCoorX, segCoorY - 20, segCoorX + 20, segCoorY + 5);//Flecha
+			outtextxy(priCoorX - ((priCoorX - segCoorX) / 2), priCoorY + ((segCoorY - priCoorY) / 2), c);
+		}
+	}
+	else if (segCoorY < priCoorY) {//Check
+		line(priCoorX, priCoorY - 20, segCoorX, segCoorY + 20);
+		if (segCoorX > priCoorX) {
+			//line(segCoorX-20, segCoorY + 20, segCoorX - 40, segCoorY - 5);//Flecha
+			//line(segCoorX-20, segCoorY + 20, segCoorX + 15, segCoorY + 15);//Flecha
+			outtextxy(priCoorX + ((segCoorX - priCoorX) / 2), priCoorY - ((priCoorY - segCoorY) / 2), c);
+		}
+		else {
+			//line(segCoorX, segCoorY - 20, segCoorX - 20, segCoorY - 10);//Flecha
+			//line(segCoorX, segCoorY - 20, segCoorX + 20, segCoorY + 5);//Flecha
+			outtextxy(priCoorX - ((priCoorX - segCoorX) / 2), priCoorY - ((priCoorY - segCoorY) / 2), c);
+		}
+	}
+}
+
+void Grafo::InsertaArista(string A, string B, int precio)
+{
+	Vertice* vori = Find(A);
+	Vertice* vdest = Find(B);
+
+	GrafFlecha(vori->coorX, vori->coorY, vdest->coorX, vdest->coorY, precio);
+
+	if (vori && vdest)
+	{
+		Arista* nueva = new Arista(vdest, precio);
+
+		if (vori->ari == NULL)
+			vori->ari = nueva;
+		else
+		{
+			Arista* j = vori->ari;
+
+			while (j->sig != NULL)
+				j = j->sig;
+
+			j->sig = nueva;
+		}
+	}
+}
+
+bool CostoMinimo(const pair<Vertice*, int>& a, const pair<Vertice*, int>& b)
+{
+	return a.second < b.second;
+}
+
+void MostrarTrazo(int priCoorX, int priCoorY, int segCoorX, int segCoorY) {
+	settextstyle(3, 0, 2);
+	setlinestyle(0, 4, 2);
+
+	if (segCoorX > priCoorX && segCoorY == priCoorY) {
+		line(priCoorX + 20, priCoorY, segCoorX - 20, segCoorY);
+	}
+	else if (segCoorY > priCoorY) {
+		line(priCoorX, priCoorY + 20, segCoorX, segCoorY - 20);
+	}
+	else if (segCoorY < priCoorY) {
+		line(priCoorX, priCoorY - 20, segCoorX, segCoorY + 20);
+	}
+	else if (priCoorX > segCoorX && segCoorY == priCoorY) {
+		line(priCoorX - 20, priCoorY, segCoorX + 20, segCoorY);
+	}
+}
+
+void MostraCamino(string Camino, int DistanciaX, int DistanciaY, int tamLetr) {
+	settextstyle(3, 0, tamLetr);
+	char c[100];
+	strcpy(c, (Camino + " ->").c_str());
+	outtextxy(DistanciaX, DistanciaY, c);
+}
+
+void Grafo::Dijkstra(string inicio, string final)
+{
+	Vertice* vorigen = Find(inicio);
+
+	if (vorigen == NULL)
+		std::cout << "El vertice origen no existe" << endl;
+	else
+	{
+		map<Vertice*, map<Vertice*, int>> matriz;
+		map<Vertice*, bool> visitados;
+		map<Vertice*, Vertice*> rutas;
+		map<Vertice*, int> cola;
+		map<Vertice*, int> distancias;
+
+		Vertice* vi = primero;
+
+		// Inicializar colecciones de datos
+		while (vi != NULL)
+		{
+			visitados[vi] = false;
+			rutas[vi] = NULL;
+			distancias[vi] = int(std::numeric_limits<int>::max);
+
+			Vertice* vj = primero;
+
+			while (vj != NULL)
+			{
+				matriz[vi][vj] = int(std::numeric_limits<int>::max);
+				vj = vj->sig;
+			}
+
+			Arista* aj = vi->ari;
+
+			while (aj != NULL)
+			{
+				matriz[vi][aj->dest] = aj->precio;
+				aj = aj->sig;
+			}
+
+			vi = vi->sig;
+		}
+
+		distancias[vorigen] = 0;
+		visitados[vorigen] = true;
+		cola[vorigen] = distancias[vorigen];
+
+		while (!cola.empty())
+		{
+			// Encuentra el vertice con el costo menor en la cola
+			map<Vertice*, int>::iterator iter = min_element(cola.begin(), cola.end(), CostoMinimo);
+			visitados[iter->first] = true;
+
+			// Recorre todos los vertices que tiene como destino
+			Arista* ai = iter->first->ari;
+
+			while (ai != NULL)
+			{
+				if (!visitados[ai->dest])
+				{
+					if (distancias[ai->dest] > distancias[iter->first] + matriz[iter->first][ai->dest])
+					{
+						distancias[ai->dest] = distancias[iter->first] + matriz[iter->first][ai->dest];
+						rutas[ai->dest] = iter->first;
+						cola[ai->dest] = distancias[ai->dest];
+					}
+				}
+
+				ai = ai->sig;
+			}
+
+			cola.erase(iter->first);
+		}
+
+		// Muestra los vertices destino con su respectivo peso total
+		for (map<Vertice*, int>::iterator i = distancias.begin(); i != distancias.end(); i++) {
+			if (i->first->nombre == final) {
+				string valorN = to_string(i->second);
+				char c[20];
+				strcpy(c, valorN.c_str());
+				settextstyle(3, 0, 2);
+				outtextxy(850, 500, c);
+			}
+			//cout << i->first->nombre << ": " << i->second << endl;
+		}
+		// Muestra las rutas completas
+		for (map<Vertice*, Vertice*>::iterator i = rutas.begin(); i != rutas.end(); i++)
+		{
+			int contador = 0;
+			Vertice* vAct = i->first;
+			if (i->first->nombre == final) {
+				int ddIsta = 900;
+				while (vAct != NULL)
+				{
+					//std::cout << vAct->nombre << " <- ";
+					MostraCamino(vAct->nombre, ddIsta, 550, 2);
+					ddIsta -= 100;
+					contador++;
+					vAct = rutas[vAct];
+				}
+			}
+			Vertice* ContI = i->first;
+			if (i->first->nombre == final) {
+				setcolor(4);
+				for (int k = 0; k < contador - 1; k++) {
+					MostrarTrazo(ContI->coorX, ContI->coorY, rutas[ContI]->coorX, rutas[ContI]->coorY);
+					//line(ContI->coorX, ContI->coorY, rutas[ContI]->coorX, rutas[ContI]->coorY);
+					ContI = rutas[ContI];
+				}
+
+			}
+		}
+		Vertice* aj = vorigen->sig;
+		while (aj != NULL)
+		{
+			cout << matriz[vorigen][aj] << " ";
+			aj = aj->sig;
+
+		}
+		cout << endl;
+	}
+
+}
+
+int main()
+{
+	initwindow(1350, 700, "Dijkstra :)");
+
+	char DJKSTR[] = { "DIJKSTRA" };
+	//MostraCamino(DJKSTR, 800, 50, 10);
+	Grafo* grafo = new Grafo();
+	//Ciudad y coordenadas
+	grafo->InsertaVertice("Arequipa", 100, 300);
+	grafo->InsertaVertice("Lima", 200, 100);
+	grafo->InsertaVertice("Cusco", 400, 300);
+	grafo->InsertaVertice("Tacna", 200, 500);
+	grafo->InsertaVertice("Puno", 600, 100);
+	grafo->InsertaVertice("Iquitos", 600, 500);
+	grafo->InsertaVertice("Ica", 800, 300);
+	//Ciudades y la distancia entre ellas
+	grafo->InsertaArista("Arequipa", "Lima", 2);
+	grafo->InsertaArista("Arequipa", "Cusco", 5);
+	grafo->InsertaArista("Arequipa", "Tacna", 4);
+	grafo->InsertaArista("Lima", "Cusco", 2);
+	grafo->InsertaArista("Lima", "Puno", 7);
+	grafo->InsertaArista("Tacna", "Cusco", 1);
+	grafo->InsertaArista("Tacna", "Iquitos", 4);
+	grafo->InsertaArista("Cusco", "Puno", 4);
+	grafo->InsertaArista("Cusco", "Iquitos", 3);
+	grafo->InsertaArista("Puno", "Iquitos", 1);
+	grafo->InsertaArista("Puno", "Ica", 5);
+	grafo->InsertaArista("Iquitos", "Ica", 7);
+
+	std::cout << "Dijkstra" << endl;
+
+//	grafo->Dijkstra("Arequipa", "Ica");
+	/***************************menu*******************/
+
+	int choice;
+	//dibujo inicial vacio
+//	initwindow(1200, 800, "Dijkstra!");
+	do {
+		cout << "\n\n--------Menu-----------\n";
+		cout << "1.Nueva busqueda: \n";
+		cout << "2.Punto de llegada\n";
+		cout << "3. Mostrar\n";
+		cout << "4.Salir\n-----------------------";
+		cout << "\nHola, ingresa tu opcion(1,2,3,4):\t";
+		cin >> choice;
+		switch (choice)
+		{
+		case 1: {
+			cleardevice();
+			Grafo* grafo = new Grafo();
+	
+			grafo->InsertaVertice("Arequipa", 100, 300);
+			grafo->InsertaVertice("Lima", 200, 100);
+			grafo->InsertaVertice("Cusco", 400, 300);
+			grafo->InsertaVertice("Tacna", 200, 500);
+			grafo->InsertaVertice("Puno", 600, 100);
+			grafo->InsertaVertice("Iquitos", 600, 500);
+			grafo->InsertaVertice("Ica", 800, 300);
+			//Ciudades y la distancia entre ellas
+			grafo->InsertaArista("Arequipa", "Lima", 2);
+			grafo->InsertaArista("Arequipa", "Cusco", 5);
+			grafo->InsertaArista("Arequipa", "Tacna", 4);
+			grafo->InsertaArista("Lima", "Cusco", 2);
+			grafo->InsertaArista("Lima", "Puno", 7);
+			grafo->InsertaArista("Tacna", "Cusco", 1);
+			grafo->InsertaArista("Tacna", "Iquitos", 4);
+			grafo->InsertaArista("Cusco", "Puno", 4);
+			grafo->InsertaArista("Cusco", "Iquitos", 3);
+			grafo->InsertaArista("Puno", "Iquitos", 1);
+			grafo->InsertaArista("Puno", "Ica", 5);
+			grafo->InsertaArista("Iquitos", "Ica", 7);
+
+			cout << "\nIngresa el punto de partida:\t";
+			string a;
+			cin >> a;
+
+			cout << "\nIngresa el punto de llegada:\t";
+			string b;
+			cin >> b;
+			grafo->InsertaVertice("Arequipa", 100, 300);
+			grafo->InsertaVertice("Lima", 200, 100);
+			grafo->InsertaVertice("Cusco", 400, 300);
+			grafo->InsertaVertice("Tacna", 200, 500);
+			grafo->InsertaVertice("Puno", 600, 100);
+			grafo->InsertaVertice("Iquitos", 600, 500);
+			grafo->InsertaVertice("Ica", 800, 300);
+			//Ciudades y la distancia entre ellas
+			grafo->InsertaArista("Arequipa", "Lima", 2);
+			grafo->InsertaArista("Arequipa", "Cusco", 5);
+			grafo->InsertaArista("Arequipa", "Tacna", 4);
+			grafo->InsertaArista("Lima", "Cusco", 2);
+			grafo->InsertaArista("Lima", "Puno", 7);
+			grafo->InsertaArista("Tacna", "Cusco", 1);
+			grafo->InsertaArista("Tacna", "Iquitos", 4);
+			grafo->InsertaArista("Cusco", "Puno", 4);
+			grafo->InsertaArista("Cusco", "Iquitos", 3);
+			grafo->InsertaArista("Puno", "Iquitos", 1);
+			grafo->InsertaArista("Puno", "Ica", 5);
+			grafo->InsertaArista("Iquitos", "Ica", 7);
+			
+			grafo->Dijkstra(a,b);
+
+
+
+
+			break;
+		}
+		case 2:
+		{
+
+
+
+			break;
+		}
+		default:cout << "\nInvalido\n";
+		}
+		//bt.toDot("Queue.dot");
+		//system("dot Queue.dot -Tsvg -o Queue.svg");
+
+	
+	} while (choice != 2);
+	/**************************************************/
+	system("pause");
+	closegraph();
+	return 0;
+}

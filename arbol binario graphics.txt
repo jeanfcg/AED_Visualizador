@@ -1,0 +1,457 @@
+#include<iostream>
+#include<string.h>
+#include "graphics.h"
+
+#include <math.h>
+#include <stdlib.h> 
+#include <ctype.h>
+using namespace std;
+
+struct Node
+{	//Valor del nodo:
+	int value;
+	//Array de los hijos 
+	Node* sides[2];
+
+	Node(int v)
+	{
+		value = v;
+		sides[0] = nullptr;
+		sides[1] = nullptr;
+	}
+
+	/*
+	~Node()
+	{
+		if (sides[0]) delete sides[0];
+		if (sides[1]) delete sides[1];
+	}
+	*/
+};
+
+
+
+class BTree
+{
+private:
+	//raiz
+	Node* root;
+	//nos sirve para ver si, tras eliminar un nodo, sube el hijo derecho o izquierdo
+	bool breemplazo;
+
+public:
+	BTree()
+	{
+		root = nullptr;
+		breemplazo = 0;
+	}
+	~BTree()
+	{
+		clear();
+	}
+
+	void insert(int v)
+	{	//raiz
+		Node** temp = &root;
+		//cuando el espacio está ocupado
+		while (*temp) {
+			//nos movemos hacia la derecha/izquierda
+			temp = &(*temp)->sides[v > (*temp)->value];
+		}
+		//cuando hay espacio, agregamos el nodo
+		*temp = new Node(v);
+	}
+
+	void remove(int v)
+	{	//usamos dos punteros p y q
+		Node** p = nullptr, ** q = nullptr;
+		//p empieza apuntando a la raiz
+		for (p = &root; 
+			//cuando p existe y su valor no es el buscado...
+			*p && (*p)->value != v;
+			//p sigue buscando el valor
+			p = &((*p)->sides[v > (*p)->value]));
+		//si p (a estas alturas, el valor buscado v) y sus hijos existen
+		if (*p && (*p)->sides[0] && (*p)->sides[1]) //case 2
+		{	//
+			Node** q = Reemplazo(p);
+			(*p)->value = (*q)->value;
+			p = q;
+		}
+
+		// case 0 or case 1
+		Node* t = *p;
+		//si p existe, entonces p contiene a (*p)->sides[ (*p)->sides[1] != 0 ] 
+		//si el hijo derecho existe:
+			//p contiene a (*p)->sides[ 1] 
+		//si el hijo derecho no existe:
+			//p contiene a (*p)->sides[ 0] 
+
+		if (*p) 
+			*p = (*p)->sides[(*p)->sides[1] != 0];
+		//como ya ubicamos al  nodo que reemplazará a p, borramos t
+		delete t;
+		//se retorna si v no existe
+		return;
+	}
+
+	Node** Reemplazo(Node** p)
+	{
+		//se buscará un reemplazo (q) tras eliminar un nodo
+		Node** q = p;
+		for (q = &( (*q)->sides[!breemplazo] ); //como breeemplazo=0 ? !breemplazo=1, (q = &( (*q)->sides[1] )  
+			(*q)->sides[breemplazo]; //inicialmente (*q)->sides[0] >>> es decir, nos movemos al hijo izquierdo
+			q = &((*q)->sides[breemplazo])); //Modificacion: q adquiere el valor del hijo izquierdo
+		/*
+
+			(*q)->sides[breemplazo]; //(*q)->sides[0] >>> es decir, nos movemos al hijo izquierdo
+			q = &((*q)->sides[breemplazo])); //Modificacion: q adquiere el valor del hijo izquierdo
+		*/
+		breemplazo = !breemplazo; //cada vez que reemplazamos, cambiamos de sentido de busqueda
+		              //sides[0] >>> sides[1] >>> sides[0] >>> sides[1] 
+		return q; //devolver el reemplazo
+	}
+
+	//funcion string
+	string text(Node* node)
+	{
+		if (!node) return "_";
+		return "Node(" + to_string(node->value) +
+			")=[" + text(node->sides[0])
+			+ "], [" + text(node->sides[1]) + "]";
+	}
+
+
+	string string_ramas(Node* node) {
+		if (!node) return "";
+		if (!node->sides[0] && !node->sides[1]) return "";
+		string all = "";
+		all += string_ramas(node->sides[0]);
+		all += to_string(node->value) + ", ";
+		all += string_ramas(node->sides[1]);
+		return all;
+	}
+	void ramas() {
+		cout << string_ramas(get_root()) << endl;
+	}
+
+	string string_hojas(Node* node) {
+		if (!node) return "";
+		string all = "";
+		all += string_hojas(node->sides[0]);
+		if (!node->sides[0] && !node->sides[1])
+			all += to_string(node->value) + ", ";
+		all += string_hojas(node->sides[1]);
+		return all;
+	}
+
+	void hojas() {
+		cout << string_hojas(get_root()) << endl;
+	}
+
+	string string_hijos(Node* node) {
+		if (!node) return "";
+		if (!node->sides[0] && !node->sides[1]) return "";
+		string all = "";
+		all += "(" + to_string(node->value) + ", ";
+		if (node->sides[0]) all += to_string(node->sides[0]->value);
+		if (node->sides[0] && node->sides[1]) all += " y ";
+		if (node->sides[1]) all += to_string(node->sides[1]->value);
+		all += "), ";
+		all += string_hijos(node->sides[0]);
+		all += string_hijos(node->sides[1]);
+		return all;
+	}
+	void hijos() {
+		cout << string_hijos(get_root()) << endl;
+	}
+
+
+	string string_hermanos(Node* node) {
+		if (!node) return "";
+		if (!node->sides[0] && !node->sides[1]) return "";
+		string all = "";
+
+		if (node->sides[0] && node->sides[1]) {
+			all += "(" + to_string(node->sides[0]->value) + ", " +
+				to_string(node->sides[1]->value) + "), ";
+		}
+		all += string_hermanos(node->sides[0]);
+		all += string_hermanos(node->sides[1]);
+		return all;
+	}
+	void hermanos() {
+		cout << string_hermanos(get_root()) << endl;
+	}
+
+	string string_left(Node* node) {
+		if (!node) return "";
+		if (!node->sides[0] && !node->sides[1]) return "";
+		string all = "";
+		all += to_string(node->value) + ", ";
+		all += string_left(node->sides[0]);
+		return all;
+	}
+	string string_right(Node* node) {
+		if (!node) return "";
+		if (!node->sides[0] && !node->sides[1]) return "";
+		string all = "";
+		all += string_right(node->sides[1]);
+		all += to_string(node->value) + ", ";
+		return all;
+	}
+	void contorno() {
+		cout << string_left(get_root());
+		cout << string_hojas(get_root());
+		Node* temp = get_root();
+		if (temp && temp->sides[1])
+			cout << string_right(temp->sides[1]);
+		cout << endl;
+	}
+
+	string preorder(Node* node) {
+		if (!node) return "_,";
+		string all = "";
+		all += to_string(node->value) + ",";
+		all += preorder(node->sides[0]);
+		all += preorder(node->sides[1]);
+		return all;
+	}
+
+	string postorder(Node* node) {
+		if (!node) return "_";
+		string all = "";
+		all += postorder(node->sides[0]);
+		all += postorder(node->sides[1]);
+		all += to_string(node->value);
+		return all;
+	}
+
+	string text2(Node* node, int ago = 0, int now = 0)
+	{
+		if (!node) return "";
+		return to_string(node->value);
+	}
+	
+	friend ostream& operator << (ostream& os, BTree bt)
+	{
+		os << bt.text(bt.get_root()) << endl;
+		return os;
+	}
+
+	Node* get_root()
+	{
+		return root;
+	}
+
+	void clear() {
+		//delete root;
+		root = nullptr;
+	}
+
+	void printHelper(Node* root, string indent, bool last) {
+		if (root != nullptr) {
+			cout << indent;
+			if (last) {
+				cout << "R----";
+				indent += "   ";
+			}
+			else {
+				cout << "L----";
+				indent += "|  ";
+			}
+			cout << root->value << endl;
+			printHelper(root->sides[0], indent, false);
+			printHelper(root->sides[1], indent, true);
+		}
+	}
+
+	void printTree() {
+		if (root) {
+			printHelper(this->root, "", true);
+		}
+	}
+
+};
+
+void contador(int& cont2, Node* x) {
+	if (!x) return;
+	cont2 = cont2 + 1;
+	contador(cont2, x->sides[0]);
+	contador(cont2, x->sides[1]);
+}
+
+void imprime(int x, int y, int opcion, Node* cab) {
+	if (!cab) return;
+	int contt = 0;
+	int x2 = x;
+	if (opcion == 0) {
+		contador(contt, cab->sides[1]);
+		x = x - (contt * 60) - 60;
+	}
+	else if (opcion == 1) {
+		contador(contt, cab->sides[0]);
+		x = x + (contt * 60) + 60;
+	}
+	char buffer[5];
+	strcpy(buffer, to_string(cab->value).c_str());
+	circle(x, y, 30);
+	settextstyle(ARW_STARTRIGHT, 0, 3);
+	outtextxy(x - 15, y - 15, buffer);
+	line(x2, y - 90, x, y - 30);
+
+	imprime(x, y + 120, 0, cab->sides[0]);
+	imprime(x, y + 120, 1, cab->sides[1]);
+}
+
+int main() {
+
+	BTree bt;
+
+	
+	cout << bt << endl;
+	cout << "Ramas:" << endl;
+	bt.ramas();
+	cout << "Hojas:" << endl;
+	bt.hojas();
+	cout << "Hijos:" << endl;
+	bt.hijos();
+	cout << "Hermanos:" << endl;
+	bt.hermanos();
+	cout << "Contorno:" << endl;
+	bt.contorno();
+
+	bt.printTree();
+
+
+	int choice;
+	do {
+		cout << "\n\n--------Menu-----------\n";
+		cout << "1.Insertar\n";
+		cout << "2.Eliminar\n";
+		cout << "3. Mostrar\n";
+		cout << "4.Salir\n-----------------------";
+		cout << "\nHola, ingresa tu opcion(1,2,3,4):\t";
+		cin >> choice;
+		switch (choice)
+		{
+		case 1:{
+			int a;
+			cout << "\nIngresa el numero a insertar:\t";
+			cin >> a;
+			bt.insert(a);
+			
+			
+			break;
+		}
+		case 2:
+			int b;
+			cout << "\nIngresa el numero a eliminar:\t";
+			cin >> b;
+			if (bt.get_root()!=nullptr) {
+				bt.remove(b);
+
+			}
+
+			break;
+
+		case 3:{
+			//mostrar grafico
+			initwindow(1200, 800, "BinaryTree"); //abre la ventana del arbol
+			int x = 0;
+			contador(x, bt.get_root());
+			imprime(x * 40, 100, 3, bt.get_root());
+			//mostrar en consola:
+			cout << bt << endl;
+			cout << "Ramas:" << endl;
+			bt.ramas();
+			cout << "Hojas:" << endl;
+			bt.hojas();
+			cout << "Hijos:" << endl;
+			bt.hijos();
+			cout << "Hermanos:" << endl;
+			bt.hermanos();
+			cout << "Contorno:" << endl;
+			bt.contorno();
+
+			bt.printTree();
+
+			break;
+		}
+		case 4: {
+
+			break;
+
+		}
+		default:cout << "\nInvalido\n";
+		}
+		//bt.toDot("Queue.dot");
+		//system("dot Queue.dot -Tsvg -o Queue.svg");
+
+	} while (choice != 4);
+
+
+/*
+	initwindow(1200, 800, "BinaryTree"); //abre la ventana del arbol
+	int x = 0;
+	contador(x, bt.get_root());
+	imprime(x * 40, 100, 3, bt.get_root());
+	bt.remove(10);
+	bt.printTree();
+
+	system("pause");
+	cleardevice();
+	x = 0;
+	contador(x, bt.get_root());
+	imprime(x * 40, 100, 3, bt.get_root());
+
+	system("pause");
+	*/
+	//closegraph();
+	return 0;
+}
+
+
+/*output:
+Node(8)=[Node(4)=[Node(2)=[Node(1)=[_], [_]], [Node(3)=[_], [_]]], [Node(6)=[Node(5)=[_], [_]], [Node(7)=[_], [_]]]], [Node(11)=[Node(9)=[_], [Node(10)=[_], [_]]], [Node(13)=[Node(12)=[_], [_]], [Node(17)=[_], [_]]]]
+
+Ramas:
+2, 4, 6, 8, 9, 11, 13,
+Hojas:
+1, 3, 5, 7, 10, 12, 17,
+Hijos:
+(8, 4 y 11), (4, 2 y 6), (2, 1 y 3), (6, 5 y 7), (11, 9 y 13), (9, 10), (13, 12 y 17),
+Hermanos:
+(4, 11), (2, 6), (1, 3), (5, 7), (9, 13), (12, 17),
+Contorno:
+8, 4, 2, 1, 3, 5, 7, 10, 12, 17, 13, 11,
+R----8
+   L----4
+   |  L----2
+   |  |  L----1
+   |  |  R----3
+   |  R----6
+   |     L----5
+   |     R----7
+   R----11
+	  L----9
+	  |  R----10
+	  R----13
+		 L----12
+		 R----17
+R----8
+   L----4
+   |  L----2
+   |  |  L----1
+   |  |  R----3
+   |  R----6
+   |     L----5
+   |     R----7
+   R----11
+	  L----9
+	  R----13
+		 L----12
+		 R----17
+Presione una tecla para continuar . . .
+Presione una tecla para continuar . . .
+*/

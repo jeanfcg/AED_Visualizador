@@ -1,0 +1,241 @@
+#include<iostream>
+#include<string.h>
+#include "graphics.h"
+#include <math.h>
+#include <stdlib.h> 
+#include <ctype.h>
+using namespace std;
+
+class Cmp {
+public:
+	virtual bool cmp(int, int) = 0;  //funcion virtual pura
+};
+
+class Cless {
+
+public:
+	bool operator ()(int a, int b) {
+		return a < b;
+	}
+};
+class Cgreat {
+public:
+	bool operator ()(int a, int b) {
+		return a > b;
+	}
+};
+
+
+template<class T>
+struct CSNode
+{
+	T value;
+	CSNode<T>* next;
+	CSNode(T x)
+	{
+		value = x;
+		next = NULL;
+	}
+};
+
+template<class T, class C = Cless>
+class CSList
+{
+public:
+	CSList() {
+		//puntero hacia la cabeza (head)
+		head = nullptr;
+	}
+	~CSList() {
+		if (head)
+			clear();
+	}
+	bool Find(T x, CSNode<T>**& p);
+	bool Insert(T x);
+	bool Remove(T x);
+	void clear();
+	void print() {
+		for (CSNode<T>* i = head; i; i = i->next) {
+			cout << " " << i->value;
+		}
+	}
+	CSNode<T>* get_head() {
+		return this->head;
+	}
+
+private:
+	CSNode<T>* head;
+	C cmp;
+};
+
+
+template<class T, class C>
+bool CSList<T, C>::Find(T x, CSNode<T>**& p)
+{
+	for (p = &head; *p && cmp((*p)->value, x); p = &((*p)->next));
+
+	return *p && (*p)->value == x;
+}
+
+template<class T, class C>
+bool CSList<T, C>::Insert(T x)
+{
+	CSNode<T>** p;
+	if (Find(x, p))
+		return NULL;
+
+	CSNode<T>* t;
+	t = new CSNode<T>(x);
+	t->next = *p;
+	*p = t;
+
+	return 1;
+
+}
+
+template<class T, class C>
+bool CSList<T, C>::Remove(T x)
+{
+	CSNode<T>** p;
+	if (!Find(x, p))
+		return NULL;
+
+	CSNode<T>* t = *p;
+	*p = t->next;
+	delete t;
+
+	return 1;
+}
+
+template<class T, class C>
+void CSList<T, C>::clear()
+{
+	CSNode<T>* t;
+	while (head) {
+		t = head;
+		head = t->next;
+		delete t;
+	}
+}
+
+
+template <class T>
+void imprime(int x, int y, CSNode<T>* cab, int con = 1, int sentido = 1) {
+	if (!cab) return;
+	char buffer[5];
+	strcpy(buffer, to_string(cab->value).c_str());
+	circle(x, y, 30);
+	settextstyle(ARW_STARTRIGHT, 0, 3);
+	if (cab->value < 0) outtextxy(x - 27, y - 15, buffer);
+	else outtextxy(x - 15, y - 15, buffer);
+	if (con % 10 == 0) {
+		sentido *= -1;
+		line(x, y + 30, x, y + 80);
+		// Flecha
+		line(x - 10, y + 80, x + 10, y + 80);
+		line(x + 10, y + 80, x, y + 90);
+		line(x, y + 90, x - 10, y + 80);
+		setfillstyle(SOLID_FILL, WHITE);
+		floodfill(x, y + 85, WHITE);
+		imprime(x, y + 120, cab->next, con + 1, sentido);
+	}
+	else {
+		line(x + 30 * sentido, y, x + 80 * sentido, y);
+		// Flecha
+		line(x + 80 * sentido, y - 10, x + 90 * sentido, y);
+		line(x + 90 * sentido, y, x + 80 * sentido, y + 10);
+		line(x + 80 * sentido, y + 10, x + 80 * sentido, y - 10);
+		setfillstyle(SOLID_FILL, WHITE);
+		floodfill(x + 85 * sentido, y, WHITE);
+		imprime(x + 120 * sentido, y, cab->next, con + 1, sentido);
+	}
+}
+
+int main() {
+	CSList<int, Cgreat> list;
+	list.Insert(3);
+	list.Insert(7);
+	list.Insert(4);
+	list.Insert(9);
+	list.Insert(17);
+	list.Insert(13);
+	list.Insert(23);
+	list.Insert(11);
+	list.Insert(2);
+	list.Insert(8);
+	list.Insert(42);
+	list.Insert(19);
+	list.Insert(20);
+	list.Insert(21);
+	list.Insert(23);
+	list.Insert(24);
+	list.Insert(25);
+	list.Insert(26);
+	list.Insert(-13);
+	list.Insert(27);
+	list.Insert(1);
+	list.Insert(33);
+	list.Insert(51);
+	list.Insert(47);
+
+	list.print(); cout << endl;
+	initwindow(1300, 800, "Linked List");
+	imprime(100, 100, list.get_head());
+
+	int choice;
+	do {
+cout<<"\n\n--------Menu-----------\n";
+cout<<"1.Insertar\n";
+cout<<"2.Eliminar\n";
+cout<<"3.Buscar\n";
+cout<<"-----------------------";
+cout<<"\nHola, ingresa tu opcion(1,2,3):\t";
+cin>>choice;
+switch (choice)
+{
+  case 1:
+	  int a;
+  cout<<"\nIngresa el numero a insertar:\t";
+  cin>>a;
+  list.Insert(a);
+  list.print(); cout << endl;
+  initwindow(1300, 800, "Linked List");
+  imprime(100, 100, list.get_head());
+
+  break;
+  
+  case 2: 
+  int b;
+  cout<<"\nIngresa el numero a eliminar:\t";
+  cin >> b;
+
+  list.Remove(b);
+  list.print(); cout << endl;
+  initwindow(1300, 800, "Linked List");
+  imprime(100, 100, list.get_head());
+
+  break;
+
+  case 3:
+	  int c;
+	  cout << "\nIngresa el numero a buscar:\t";
+	  //list.Find(a,);
+
+	  break;
+  case 4:
+	  break;
+
+  default :cout<<"\nInvalid choice:\n";
+}
+} while (choice!=4);
+	
+
+	system("pause");
+	closegraph();
+	return 0;
+}
+
+/* output:
+51 47 42 33 27 26 25 24 23 21 20 19 17 13 11 9 8 7 4 3 2 1 -13
+Presione una tecla para continuar . . .
+*/

@@ -1,0 +1,124 @@
+#include<iostream>
+#include<string.h>
+#include "graphics.h"
+#include <math.h>
+#include <stdlib.h> 
+#include <ctype.h>
+#include <list>
+using namespace std;
+
+
+template <class T, class U>
+struct Dato
+{
+	T key;
+	U value;
+	bool exist;
+
+	Dato() {
+		exist = false;
+	}
+
+	friend ostream& operator << (ostream& output, Dato block) {
+		output << block.key << " : " << block.value;
+		return output;
+	}
+
+	void operator = (U _value) {
+		value = _value;
+		exist = true;
+	}
+};
+
+
+template <class T, class U>
+class HashTable
+{
+public:
+	Dato<T, U>* table;
+	//dimension se usa para el hashing!
+	int dim;
+	int size;
+	const std::hash<T> hasher;
+	HashTable(int _dim = 10) {
+		size = 0;
+		dim = _dim;
+		table = new Dato<T, U>[dim];
+	}
+	~HashTable() {
+		delete[]table;
+	}
+
+	int hashFunction(T _key) {
+		const auto hashResult = hasher(_key);
+		return hashResult % dim;
+	}
+
+	void print_table() {
+		cout << "\nMy hash table = {\n";
+		for (int i = 0; i < dim; i++) {
+			if (table[i].exist)
+				cout << table[i] << endl;
+		}
+		cout << "}" << endl;
+	}
+
+	Dato<T, U>& operator [] (T _key) {
+		int index = hashFunction(_key);
+		table[index].key = _key;
+		return table[index];
+	}
+};
+
+template <class T, class U>
+void imprime(HashTable<T, U> table, int origin_x = 100, int origin_y = 50, int sep = 600) {
+	int x, y;
+	for (int i = 1; i <= table.dim; i++)
+		line(origin_x, origin_y * i, sep, origin_y * i);
+
+	int part = (sep - origin_x) / 2, aux = sep;
+	sep = 0;
+	for (int i = 0; i <= 2; i++) {
+		line(origin_x + sep, origin_y, origin_x + sep, origin_y * table.dim);
+		sep += part;
+	}
+	sep = aux;
+	part = (sep - origin_x) / 2;
+	for (int i = 0; i < table.dim; i++) {
+		if (table.table[i].exist) {
+			char buffer[20];
+			x = origin_x + 30;
+			y = origin_y + 20 + i * origin_y;
+			strcpy(buffer, (table.table[i].key).c_str());
+			settextstyle(ARW_STARTRIGHT, 0, 3);
+			outtextxy(x, y, buffer);
+
+			x = origin_x + 30 + part;
+			y = origin_y + 20 + i * origin_y;
+			strcpy(buffer, to_string(table.table[i].value).c_str());
+			settextstyle(ARW_STARTRIGHT, 0, 3);
+			outtextxy(x, y, buffer);
+		}
+	}
+}
+
+int main() {
+	int size = 13;
+	HashTable<string, int> ht(size);
+
+	ht["Hulk"] = 985812532;
+	ht["Hugo"] = 910772001;
+	ht["Tres"] = 933677123;
+	ht["Hello"] = 900431170;
+
+	//cout << ht["Hulk"] << endl;
+
+	ht.print_table();
+
+	initwindow(1300, 800, "Hash Tables");
+	imprime(ht);
+
+	system("pause");
+	closegraph();
+	return 0;
+}

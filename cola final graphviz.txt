@@ -1,0 +1,53 @@
+#include "Queue.h"
+#include <iostream>
+using namespace std;
+int main() {
+    Queue<int> cola;
+    
+        int choice;
+        do {
+            cout << "\n\n--------Menu-----------\n";
+            cout << "1.Insertar\n";
+            cout << "2.Eliminar\n";
+            cout << "-----------------------";
+            cout << "\nHola, ingresa tu opcion(1,2):\t";
+            cin >> choice;
+            switch (choice)
+            {
+            case 1:
+                int a;
+                cout << "\nIngresa el numero a insertar:\t";
+                cin >> a;
+                cola.enqueue(a);
+
+                break;
+
+            case 2:
+                //int b;
+                //cout << "\nIngresa el numero a eliminar:\t";
+                //cin >> b;
+                if (cola.getSize() != 0) {
+                    cola.dequeue();
+
+                }
+
+                break;
+
+            case 3:
+                break;
+
+            default:cout << "\nInvalido\n";
+            }
+            cola.toDot("Queue.dot");
+            system("dot Queue.dot -Tsvg -o Queue.svg");
+
+        } while (choice != 3);
+
+
+
+        return 0;
+    }
+
+
+
+ 

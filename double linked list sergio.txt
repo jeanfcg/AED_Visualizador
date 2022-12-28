@@ -1,0 +1,301 @@
+#include<iostream>
+#include<string.h>
+#include "graphics.h"
+#include <math.h>
+#include <stdlib.h> 
+#include <ctype.h>
+using namespace std;
+
+template <class T>
+struct Node {
+	T value;
+	Node<T>* next;
+	Node<T>* prev;
+	Node() {
+		value = 0;
+		next = nullptr;
+		prev = nullptr;
+	}
+	Node(T v, Node<T>* nxt, Node<T>* pv) : value(v),
+		next(nxt), prev(pv) {}
+};
+
+
+template <class T>
+class MyList
+{
+private:
+	int size;
+	Node<T>* data;
+
+public:
+	MyList()
+	{
+		size = 0;
+		data = nullptr;
+	}
+
+	~MyList()
+	{
+		clear();
+	}
+
+	void push_back(T n) {
+		if (data) {
+			Node<T>* temp = end();
+			temp->next = new Node<T>(n, nullptr, temp);
+		}
+		else {
+			data = new Node<T>(n, nullptr, nullptr);
+		}
+		size++;
+	}
+
+	void push_front(T n) {
+		if (data) {
+			Node<T>* temp = new Node<T>(n, data, nullptr);
+			data->prev = temp;
+			data = temp;
+		}
+		else {
+			data = new Node<T>(n, nullptr, nullptr);
+		}
+		size++;
+	}
+
+	void pop_back() {
+		if (data) {
+			Node<T>* temp = end(), * aux = nullptr;
+			aux = temp->prev;
+			aux->next = nullptr;
+			delete temp;
+			--size;
+		}
+	}
+
+	void pop_front() {
+		if (data) {
+			Node<T>* temp = data->next;
+			temp->prev = nullptr;
+			delete data;
+			data = temp;
+			--size;
+		}
+	}
+
+	void insert(int pos, T n) {
+		if (pos == 0)
+			push_front(n);
+		else {
+			Node<T>* temp = nullptr;
+			int p = 0;
+			for (Node<T>* aux = data; p < pos && aux; temp = aux, aux = aux->next, p++);
+			if (temp != NULL) {
+				temp->next = new Node<T>(n, temp->next, temp);
+				size++;
+			}
+		}
+	}
+
+	void pop_position(int pos) {
+		if (pos == size - 1) pop_back();
+		else if (pos == 0) pop_front();
+		else {
+			Node<T>* temp = nullptr, * aux = nullptr;
+			int p = 0;
+			for (aux = data; p < pos && aux; temp = aux, aux = aux->next, p++);
+			if (temp != NULL && aux != NULL) {
+				temp->next = aux->next;
+				aux->next->prev = temp;
+				delete aux;
+				size--;
+			}
+		}
+	}
+
+	Node<T>* begin() {
+		return data;
+	}
+
+	Node<T>* end() {
+		Node<T>* temp = nullptr;
+		for (Node<T>* aux = data; aux; temp = aux, aux = aux->next);
+		return temp;
+	}
+
+	void clear() {
+		Node<T>* temp;
+		while (data) {
+			temp = data;
+			data = data->next;
+			delete temp;
+		}
+		size = 0;
+	}
+
+	int get_size() {
+		return size;
+	}
+};
+
+
+
+template <class T>
+void imprime(int x, int y, Node<T>* cab, int con = 1, int sentido = 1) {
+	if (!cab) return;
+	char buffer[5];
+	strcpy(buffer, to_string(cab->value).c_str());
+	circle(x, y, 30);
+	settextstyle(ARW_STARTRIGHT, 0, 3);
+	if (cab->value < 0) outtextxy(x - 27, y - 15, buffer);
+	else outtextxy(x - 15, y - 15, buffer);
+	int a = x, b = y;
+	if (con % 10 == 0) {
+		sentido *= -1;
+		a = x + 5;
+		x -= 5;
+		line(x, y + 30, x, y + 80);
+		// Flecha ->
+		line(x - 10, y + 80, x + 10, y + 80);
+		line(x + 10, y + 80, x, y + 90);
+		line(x, y + 90, x - 10, y + 80);
+		setfillstyle(SOLID_FILL, WHITE);
+		floodfill(x, y + 85, WHITE);
+
+		line(a, b + 90, a, b + 40);
+		// Flecha <-
+		line(a - 10, b + 40, a + 10, b + 40);
+		line(a + 10, b + 40, a, b + 30);
+		line(a, b + 30, a - 10, b + 40);
+		setfillstyle(SOLID_FILL, WHITE);
+		floodfill(a, b + 35, WHITE);
+
+		x += 5;
+		imprime(x, y + 120, cab->next, con + 1, sentido);
+	}
+	else {
+		b = y + 5;
+		y -= 5;
+		line(x + 30 * sentido, y, x + 80 * sentido, y);
+		// Flecha ->
+		line(x + 80 * sentido, y - 10, x + 90 * sentido, y);
+		line(x + 90 * sentido, y, x + 80 * sentido, y + 10);
+		line(x + 80 * sentido, y + 10, x + 80 * sentido, y - 10);
+		setfillstyle(SOLID_FILL, WHITE);
+		floodfill(x + 85 * sentido, y, WHITE);
+
+		line(a + 90 * sentido, b, a + 40 * sentido, b);
+		// Flecha <-
+		line(a + 40 * sentido, b - 10, a + 40 * sentido, b + 10);
+		line(a + 40 * sentido, b + 10, a + 30 * sentido, b);
+		line(a + 30 * sentido, b, a + 40 * sentido, b - 10);
+		setfillstyle(SOLID_FILL, WHITE);
+		floodfill(a + 35 * sentido, b, WHITE);
+
+		y += 5;
+		imprime(x + 120 * sentido, y, cab->next, con + 1, sentido);
+	}
+}
+
+int main() {
+	MyList<int> ml;
+	ml.push_back(3);
+	ml.push_back(5);
+	ml.push_back(2);
+	ml.push_front(2);
+	ml.push_front(7);
+
+	ml.insert(1, 10);
+
+	ml.push_back(13);
+	ml.push_back(53);
+	ml.push_back(20);
+	ml.push_front(21);
+	ml.push_front(17);
+	ml.push_back(31);
+	ml.push_back(15);
+	ml.push_back(24);
+	ml.push_front(25);
+	ml.push_front(27);
+	ml.push_back(37);
+	ml.push_back(50);
+	ml.push_back(41);
+	ml.push_back(32);
+	ml.push_front(21);
+	ml.push_front(48);
+
+	//ml.pop_position(0);
+
+	for (Node<int>* aux = ml.begin(); aux; aux = aux->next) {
+		cout << " " << aux->value;
+	}
+
+	cout << "\nSize List: " << ml.get_size() << endl;
+
+	initwindow(1300, 800, "Double Linked List");
+	imprime(100, 100, ml.begin());
+
+	/**********menu**********/
+	int choice;
+	do {
+		cout << "\n\n--------Menu-----------\n";
+		cout << "1.Crecer por delante\n";
+		cout << "2.Crecer por atras\n";
+		cout << "3.Decrecer por adelante\n";
+		cout << "4.Decrecer por atras\n";
+		cout << "-----------------------";
+		cout << "\nHola, ingresa tu opcion(1,2,3,4):\t";
+		cin >> choice;
+		switch (choice)
+		{
+		case 1:
+			int a;
+			cout << "\nIngresa el numero a insertar por la cabeza:\t";
+			cin >> a;
+			ml.push_front(a);
+			initwindow(1300, 800, "Linked List");
+			imprime(100, 100, ml.begin());
+
+			break;
+
+		case 2:
+			int aa;
+			cout << "\nIngresa el numero a insertar por el final:\t";
+			cin >> aa;
+			ml.push_back(aa);
+			initwindow(1300, 800, "Linked List");
+			imprime(100, 100, ml.begin());
+
+			break;
+
+		case 3:
+			ml.pop_front();
+			initwindow(1300, 800, "Linked List");
+			imprime(100, 100, ml.begin());
+
+			break;
+
+		case 4:
+			ml.pop_back();
+			initwindow(1300, 800, "Linked List");
+			imprime(100, 100, ml.begin());
+
+			break;
+		case 5:
+			break;
+		default:cout << "\nInvalid choice:\n";
+		}
+	} while (choice != 5);
+
+	/*Menu*/
+
+	system("pause");
+	closegraph();
+	return 0;
+}
+
+/* output:
+48 21 27 25 17 21 7 10 2 3 5 2 13 53 20 31 15 24 37 50 41 32
+Size List: 22
+Presione una tecla para continuar . . .
+*/
